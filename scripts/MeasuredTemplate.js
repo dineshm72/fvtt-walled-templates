@@ -732,29 +732,30 @@ function autotargetTokens({ onlyVisible = false } = {}) {
 
   log(`Autotarget ${this._original ? "clone" : "original"} with ${this.targets.size} targets.`);
   let tokens = new Set(this.targetsWithinShape({onlyVisible}));
-
-  if ( game.system.id === "dnd5e" && this.item ) {
-    try {
-      switch ( this.item.system.target.affects.type ) {
-        case "enemy":
-          tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.FRIENDLY
-                                   && t.document.disposition !== CONST.TOKEN_DISPOSITIONS.NEUTRAL);
-          break;
-        case "ally":
-          tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.HOSTILE);
-          break;
-        case "self":
-          tokens = tokens.filter(t => t.actor === this.actorSheet.actor);
-          break;
-      }
-    } catch ( err ) { log("autotargetTokens|dnd5e item error", err); }
-  }
+  try {
+    if ( game.system.id === "dnd5e" ) tokens = dnd5eTrimTargets.call(this, tokens);
+  } catch ( err ) { log(`autotargetTokens|${game.system.id} item error`, err); }
 
   const tokensToRelease = this.targets.difference(tokens);
-
   this.releaseTargets({ tokens: tokensToRelease, broadcast: false });
   this.acquireTargets({ tokens, broadcast: true, onlyVisible: false, checkShapeBounds: false });
   log(`Autotarget ${this._original ? "clone" : "original"} finished with ${this.targets.size} targets remaining.`);
+}
+
+function dnd5eTrimTargets(tokens) {
+  switch ( this.item.system.target.affects.type ) {
+    case "enemy":
+      tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.FRIENDLY
+                               && t.document.disposition !== CONST.TOKEN_DISPOSITIONS.NEUTRAL);
+      break;
+    case "ally":
+      tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.HOSTILE);
+      break;
+    case "self":
+      tokens = tokens.filter(t => t.actor === this.actorSheet.actor);
+      break;
+  }
+  return tokens;
 }
 
 /**
