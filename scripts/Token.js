@@ -60,7 +60,7 @@ function updateToken(tokenD, changed, _options, userId) {
   // Look for updates
   const updates = [];
   for ( const template of attachedTemplates ) {
-    const templateData = template._calculateAttachedTemplateOffset(changed);
+    const templateData = template._calculateAttachedTemplateOffset(changed, token);
     if ( foundry.utils.isEmpty(templateData) ) continue;
     templateData._id = template.id;
     updates.push(templateData);
@@ -410,22 +410,23 @@ async function animate(wrapped, to, options = {}) {
   const attachedTemplates = this.attachedTemplates;
   if ( !attachedTemplates.length ) return wrapped(to, options);
 
+  const token = this;
   if ( options.ontick ) {
     const ontickOriginal = options.ontick;
     options.ontick = (dt, anim, documentData, config) => {
-      attachedTemplates.forEach(t => doTemplateAnimation(t, dt, anim, documentData, config));
+      attachedTemplates.forEach(t => doTemplateAnimation(t, dt, anim, documentData, config, token));
       ontickOriginal(dt, anim, documentData, config);
     };
   } else {
     options.ontick = (dt, anim, documentData, config) => {
-      attachedTemplates.forEach(t => doTemplateAnimation(t, dt, anim, documentData, config));
+      attachedTemplates.forEach(t => doTemplateAnimation(t, dt, anim, documentData, config, token));
     };
   }
   return wrapped(to, options);
 }
 
-function doTemplateAnimation(template, _dt, _anim, documentData, _config) {
-  const templateData = template._calculateAttachedTemplateOffset(documentData);
+function doTemplateAnimation(template, _dt, _anim, documentData, _config, token) {
+  const templateData = template._calculateAttachedTemplateOffset(documentData, token);
 
   // Update the document
   foundry.utils.mergeObject(template.document, templateData, { insertKeys: false });
