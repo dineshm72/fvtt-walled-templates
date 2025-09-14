@@ -359,6 +359,7 @@ function _onDragLeftMove(wrapped, event) {
   if ( this.attachedToken ) {
     // Temporarily set the event clones to this template clone.
     const tokenClones = event.interactionData.clones;
+    event.interactionData.attachedTemplateClones ??= new Map();
     event.interactionData.clones = [event.interactionData.attachedTemplateClones.get(this.id)];
     wrapped(event);
 
@@ -730,7 +731,25 @@ function autotargetTokens({ onlyVisible = false } = {}) {
   if ( !this.autotarget ) return this.releaseTargets();
 
   log(`Autotarget ${this._original ? "clone" : "original"} with ${this.targets.size} targets.`);
-  const tokens = new Set(this.targetsWithinShape({onlyVisible}));
+  let tokens = new Set(this.targetsWithinShape({onlyVisible}));
+
+  if ( game.system.id === "dnd5e" && this.item ) {
+    try {
+      switch ( this.item.system.target.affects.type ) {
+        case "enemy":
+          tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.FRIENDLY
+                                   && t.document.disposition !== CONST.TOKEN_DISPOSITIONS.NEUTRAL);
+          break;
+        case "ally":
+          tokens = tokens.filter(t => t.document.disposition !== CONST.TOKEN_DISPOSITIONS.HOSTILE);
+          break;
+        case "self":
+          tokens = tokens.filter(t => t.actor === this.actorSheet.actor);
+          break;
+      }
+    } catch ( err ) { log("autotargetTokens|dnd5e item error", err); }
+  }
+
   const tokensToRelease = this.targets.difference(tokens);
 
   this.releaseTargets({ tokens: tokensToRelease, broadcast: false });
