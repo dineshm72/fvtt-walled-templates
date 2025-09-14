@@ -385,7 +385,7 @@ async function _onDragLeftDrop(wrapped, event) {
   event.interactionData.clones = [c];
 
   // Enforce the distance between the template and token.
-  const changes = this._calculateAttachedTemplateOffset(attachedToken.document);
+  const changes = this._calculateAttachedTemplateOffset(attachedToken.document, attachedToken);
   this.document.updateSource(changes);
   await wrapped(event);
 
@@ -556,9 +556,8 @@ async function attachToken(token, effectData, attachToToken = true) {
   delta.y = this.document.y - token.y;
   delta.elevation = this.elevationE - token.elevationE;
 
-  // If the template originates from the token, rotate with the token.
-  const center = PIXI.Point.fromObject(token.center);
-  if ( center.almostEqual(this) ) delta.rotation = this.document.direction - token.document.rotation;
+  // Rotate with the token.
+  delta.rotation = this.document.direction - token.document.rotation;
 
   // Attach deltas to the template. These should remain constant so long as the token is attached.
   await this.document.setFlag(MODULE_ID, FLAGS.ATTACHED_TOKEN.DELTAS, delta);
@@ -585,17 +584,37 @@ async function detachToken(detachFromToken = true) {
  * New method: Retrieve template change data based on a token document object
  * Construct a template data object that can be used for updating based on the delta from the token.
  * @param {object|TokenDocument} tokenData    Object with token data to offset.
+ * @param {Token} token                       Underlying token; required for off-center template rotation.
  * @returns {object} Object of adjusted data for the template
  */
-function _calculateAttachedTemplateOffset(tokenD) {
+function _calculateAttachedTemplateOffset(tokenD, token) {
   const delta = this.document.getFlag(MODULE_ID, FLAGS.ATTACHED_TOKEN.DELTAS);
   if ( !delta ) return {};
+
+  tokenD = {...tokenD }; // Avoid inadvertently changing tokenD.
+  tokenD.x ??= token.document.x;
+  tokenD.y ??= token.document.y;
+  tokenD.elevation ??= token.document.elevation;
+  tokenD.rotation ??= token.document.rotation;
+
   const templateData = {};
-  if ( Object.hasOwn(tokenD, "x") ) templateData.x = tokenD.x + delta.x;
-  if ( Object.hasOwn(tokenD, "y") ) templateData.y = tokenD.y + delta.y;
-  if ( Object.hasOwn(tokenD, "elevation") ) templateData.elevation = tokenD.elevation + delta.elevation;
-  if ( Object.hasOwn(tokenD, "rotation") && Object.hasOwn(delta, "rotation") && this.document.getFlag(MODULE_ID, FLAGS.ATTACHED_TOKEN.ROTATE) ) {
+  templateData.x = tokenD.x + delta.x;
+  templateData.y = tokenD.y + delta.y;
+  templateData.elevation = tokenD.elevation + delta.elevation;
+  if ( Object.hasOwn(delta, "rotation") && this.document.getFlag(MODULE_ID, FLAGS.ATTACHED_TOKEN.ROTATE) ) {
     templateData.direction = Math.normalizeDegrees(tokenD.rotation + delta.rotation);
+
+    // If not centered on the token, move the template origin accordingly.
+    const center = PIXI.Point.fromObject(token.getCenterPoint(tokenD));
+    if ( !center.almostEqual(this) ) {
+      // The templateData is current set as if the template were just attached. Move away from the token center in a circle around the token center.
+      const dist = PIXI.Point.distanceBetween(center, templateData);
+      const newTemplateCenter = center.fromAngle(Math.toRadians(templateData.direction), dist);
+      templateData.x = newTemplateCenter.x;
+      templateData.y = newTemplateCenter.y;
+      newTemplateCenter.release();
+    }
+    center.release();
   }
   return this.document.constructor.cleanData(templateData, {partial: true});
 }
