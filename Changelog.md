@@ -1,3 +1,9 @@
+## 0.9.2
+Fix rotation setting being ignored. Issue #146.
+Add rotation for templates that are not centered on the attached token. Issue #145.
+Ignore non-enemies, non-allies, or non-self when autotargeting in dnd5e based on spell item parameters. Issue #147.
+Templates should now work with other token shapes, like with PF2e token types. Issue #133.
+
 ## 0.9.1
 Fix for template highlighting in PF1 when walls block. Issue #144.
 Fix for "name" error in module.json. Issue #141.
