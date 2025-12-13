@@ -2,7 +2,6 @@
 canvas,
 foundry,
 PIXI,
-Wall,
 */
 "use strict";
 

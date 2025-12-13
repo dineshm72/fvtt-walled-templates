@@ -1,6 +1,5 @@
 /* globals
 canvas,
-foundry,
 game,
 ui,
 */
