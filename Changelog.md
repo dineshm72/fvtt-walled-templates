@@ -1,5 +1,6 @@
 ## 0.9.3
-Fix for attached token drag errors. Issue #149.
+Fix for attached token drag errors. #149.
+Fix display of SWADE cone template. #148.
 
 
 Update to libGeometry 0.4.6.

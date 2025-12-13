@@ -22,9 +22,12 @@ export class WalledTemplateRoundedCone extends WalledTemplateCone {
     distance ??= this.distance;
 
     // Convert to degrees and grid units for Foundry method.
-    direction = Math.toDegrees(direction);
-    angle = Math.toDegrees(angle);
-    distance = pixelsToGridUnits(distance);
-    return this.template._getConeShape(direction, angle, distance);
+    // direction = Math.toDegrees(direction);
+    // angle = Math.toDegrees(angle);
+    // distance = pixelsToGridUnits(distance);
+    const width = this.template?.document?.width ?? pixelsToGridUnits(this.width);
+
+    // if ( !angle ) return foundry.canvas.placeables.MeasuredTemplate.getConeShape(pixelsToGridUnits(distance), Math.toDegrees(direction), Math.toDegrees(angle));
+    return this.template._getConeShape(direction, angle, distance, width);
   }
 }
