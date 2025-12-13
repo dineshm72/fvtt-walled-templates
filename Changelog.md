@@ -1,3 +1,8 @@
+## 0.9.3
+
+
+Update to libGeometry 0.4.6.
+
 ## 0.9.2
 Fix rotation setting being ignored. Issue #146.
 Add rotation for templates that are not centered on the attached token. Issue #145.

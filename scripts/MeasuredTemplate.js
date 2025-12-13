@@ -18,6 +18,7 @@ import { Square } from "./geometry/RegularPolygon/Square.js";
 import { UserCloneTargets } from "./UserCloneTargets.js";
 import { addDnd5eItemConfigurationToTemplate } from "./dnd5e.js";
 import { canvasVisibilityPolygons } from "./visibility_polygons.js";
+import { Draw } from "./geometry/Draw.js";
 
 export const PATCHES = {};
 PATCHES.BASIC = {};
@@ -229,7 +230,6 @@ function _getGridHighlightPositions(wrapper) {
 
     // Debug
     if ( CONFIG[MODULE_ID].debug ) {
-      const Draw = CONFIG.GeometryLib.Draw;
       Draw.clearDrawings();
       positions.forEach(p => Draw.point(p, { alpha: 0.4 }))
       positions.forEach(p => Draw.shape(gridShapeForTopLeft(p), { fill: Draw.COLORS.blue, fillAlpha: 0.2 }));
@@ -262,7 +262,6 @@ function _getGridHighlightPositions(wrapper) {
 
   // Debug
   if ( CONFIG[MODULE_ID].debug ) {
-    const Draw = CONFIG.GeometryLib.Draw;
     positions.forEach(p => Draw.point(p, { alpha: 0.8 }))
     positions.forEach(p => Draw.shape(gridShapeForTopLeft(p), { fill: Draw.COLORS.blue, fillAlpha: 0.5 }));
   }
