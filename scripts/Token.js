@@ -158,7 +158,7 @@ function _refreshCloneTarget() {
   this.targetArrows.clear();
 
   // Determine whether the current user has target and any other users
-  const [others, user] = Array.from(this.cloneTargeted).partition(u => u === game.user);
+  const [others, user] = Array.from(this.cloneTargeted).partition(u => u === game.user); // eslint-disable-line no-unused-vars
 
   // For the current user, draw the target arrows.
   // Use half-transparency to distinguish from normal targets.
@@ -270,32 +270,32 @@ PATCHES.BASIC.GETTERS = { attachedTemplates };
 //   return tokenClone;
 // }
 
+
 /**
- * Wrap Token.prototype._onDragLeftStart
+ * Wrap Token.prototype._initializeDragLeft
  * Trigger the attached template(s) to drag in sync.
  * @param {PIXI.FederatedEvent} event   The triggering canvas interaction event
  */
-function _onDragLeftStart(wrapped, event) {
+function _initializeDragLeft(wrapped, event) {
   wrapped(event);
 
   // Trigger each attached template to drag.
-  if ( !event.interactionData.clones ) return;
+  // See issue #136: Foundry v13 changed to use _initializeDragLeft.
   event[MODULE_ID] ??= {};
-  for ( const clone of event.interactionData.clones ) {
-    const attachedTemplates = clone.attachedTemplates;
-    event[MODULE_ID].draggedAttachedToken = clone;
-    for ( const template of attachedTemplates ) template._onDragLeftStart(event);
+  for ( const token of event.interactionData.clones ) {
+    event[MODULE_ID].draggedAttachedToken = true;
+    token.attachedTemplates.forEach(template => template._initializeDragLeft(event));
   }
 }
 
 function _onDragLeftMove(wrapped, event) {
   wrapped(event);
-  if ( !event.interactionData.clones ) return;
 
   // Trigger each attached template to drag.
-  for ( const clone of event.interactionData.clones ) {
-    const attachedTemplates = clone.attachedTemplates;
-    for ( const template of attachedTemplates ) template._onDragLeftMove(event);
+  // See issue #136: https://github.com/caewok/fvtt-walled-templates/issues/136
+  const tokens = event.interactionData.clones ?? (event.interactionData.object ? [event.interactionData.object] : []);
+  for ( const token of tokens ) {
+    token.attachedTemplates.forEach(template => template._onDragLeftMove(event));
   }
 }
 
@@ -314,19 +314,38 @@ function _onDragLeftMove(wrapped, event) {
 //   return res;
 // }
 
-function _onDragLeftCancel(wrapped, event) {
+function _finalizeDragLeft(wrapped, event) {
   const out = wrapped(event); // Returns false if the drag event should *not* be canceled.
-  if ( !event.interactionData.clones || out === false ) return out;
+  if ( out === false ) return out;
 
   // Trigger each attached template to cancel the drag
+  // See issue #136: https://github.com/caewok/fvtt-walled-templates/issues/136
+  const tokens = event.interactionData.clones ?? (event.interactionData.object ? [event.interactionData.object] : []);
   const formerClear = event.interactionData.clearPreviewContainer;
   event.interactionData.clearPreviewContainer = true;
-  for ( const clone of event.interactionData.clones ) {
-    const attachedTemplates = clone.attachedTemplates;
-    for ( const template of attachedTemplates ) template._onDragLeftCancel(event);
+  for ( const token of tokens ) {
+    token.attachedTemplates.forEach(template => template._finalizeDragLeft(event));
   }
   event.interactionData.clearPreviewContainer = formerClear;
+  return out;
 }
+
+
+// function _onDragLeftCancel(wrapped, event) {
+//   const out = wrapped(event); // Returns false if the drag event should *not* be canceled.
+//   if ( out === false ) return out;
+//
+//   // Trigger each attached template to cancel the drag
+//   // See issue #136: https://github.com/caewok/fvtt-walled-templates/issues/136
+//   const tokens = event.interactionData.clones ?? (event.interactionData.object ? [event.interactionData.object] : []);
+//   const formerClear = event.interactionData.clearPreviewContainer;
+//   event.interactionData.clearPreviewContainer = true;
+//   for ( const token of tokens ) {
+//     token.attachedTemplates.forEach(template => template._finalizeDragLeft(event));
+//   }
+//   event.interactionData.clearPreviewContainer = formerClear;
+//   return out;
+// }
 
 /**
  * Wrap Token.prototype._onHoverIn
@@ -442,10 +461,10 @@ function doTemplateAnimation(template, _dt, _anim, documentData, _config, token)
 
 
 PATCHES.BASIC.WRAPS = {
-  _onDragLeftStart,
+  _initializeDragLeft,
   _onDragLeftMove,
-//  _onDragLeftDrop, // Currently unused.
-  _onDragLeftCancel,
+  _finalizeDragLeft,
+  // _onDragLeftDrop,
   _refreshTarget,
   animate,
 
