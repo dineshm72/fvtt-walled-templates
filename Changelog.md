@@ -1,4 +1,5 @@
 ## 0.9.3
+Fix for attached token drag errors. Issue #149.
 
 
 Update to libGeometry 0.4.6.
