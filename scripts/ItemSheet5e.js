@@ -4,6 +4,7 @@ dnd5e,
 game,
 Hooks,
 PIXI,
+renderTemplate,
 */
 /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
 "use strict";
@@ -45,8 +46,6 @@ function renderTidy5eItemSheetHook(api) {
 }
 
 async function renderTidy5eSpellTemplateConfig(parts, data) {
-  const {navTabs, sheetBodySection, tidy5e} = parts;
-
   const item = data.item;
   if ( !item ) return;
 
@@ -90,7 +89,7 @@ async function renderTidy5eSpellTemplateConfig(parts, data) {
   // Create a new tab entry for the module.
   const div = document.createElement("DIV");
   div.innerHTML = myHTML;
-  tidy5e.appendChild(div);
+  parts.tidy5e.appendChild(div);
 }
 
 

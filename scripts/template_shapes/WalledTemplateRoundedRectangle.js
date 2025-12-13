@@ -1,7 +1,4 @@
 /* globals
-canvas,
-CONFIG,
-MeasuredTemplate,
 PIXI
 */
 /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
@@ -9,7 +6,6 @@ PIXI
 
 
 import { WalledTemplateRectangle } from "./WalledTemplateRectangle.js";
-import { pixelsToGridUnits } from "../geometry/util.js";
 
 /**
  * Calculate the radius of the rounded rectangle based on the smaller of the width or height.

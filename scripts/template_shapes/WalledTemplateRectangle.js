@@ -1,7 +1,7 @@
 /* globals
 canvas,
 CONFIG,
-MeasuredTemplate,
+foundry,
 PIXI
 */
 /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */

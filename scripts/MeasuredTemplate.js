@@ -18,6 +18,7 @@ import { Square } from "./geometry/RegularPolygon/Square.js";
 import { UserCloneTargets } from "./UserCloneTargets.js";
 import { addDnd5eItemConfigurationToTemplate } from "./dnd5e.js";
 import { canvasVisibilityPolygons } from "./visibility_polygons.js";
+import { Draw } from "./geometry/Draw.js";
 
 export const PATCHES = {};
 PATCHES.BASIC = {};
@@ -229,7 +230,6 @@ function _getGridHighlightPositions(wrapper) {
 
     // Debug
     if ( CONFIG[MODULE_ID].debug ) {
-      const Draw = CONFIG.GeometryLib.Draw;
       Draw.clearDrawings();
       positions.forEach(p => Draw.point(p, { alpha: 0.4 }))
       positions.forEach(p => Draw.shape(gridShapeForTopLeft(p), { fill: Draw.COLORS.blue, fillAlpha: 0.2 }));
@@ -262,7 +262,6 @@ function _getGridHighlightPositions(wrapper) {
 
   // Debug
   if ( CONFIG[MODULE_ID].debug ) {
-    const Draw = CONFIG.GeometryLib.Draw;
     positions.forEach(p => Draw.point(p, { alpha: 0.8 }))
     positions.forEach(p => Draw.shape(gridShapeForTopLeft(p), { fill: Draw.COLORS.blue, fillAlpha: 0.5 }));
   }
@@ -334,21 +333,22 @@ function clone(wrapped) {
  * Wrap MeasuredTemplate.prototype._onDragLeftStart
  * If this is a clone
  */
-function _onDragLeftStart(wrapped, event) {
+
+/**
+ * Wrap MeasuredTemplate.prototype._initializeDragLeft
+ * Initialize dragging for attached templates.
+ */
+function _initializeDragLeft(wrapped, event) {
   if ( !this.attachedToken ) return wrapped(event);
 
-  // Store token and template clones separately.
+  // Store the token clones separate from the template clones.
   const tokenClones = event.interactionData.clones;
-
-  // See issue #112 and Discord https://ptb.discord.com/channels/915186263609454632/1167221795103985764/1235614818304655465
-  const oldControllableObjects = this.layer.options.controllableObjects;
-  if ( !this.layer.controlled.length ) this.layer.options.controllableObjects = false;
+  event.interactionData.clones = [];
   wrapped(event);
-  this.layer.options.controllableObjects = oldControllableObjects;
-  event.interactionData.attachedTemplateClones ??= new Map();
 
   // Only one clone will be created for this template; retrieve and store.
   const templateClone = event.interactionData.clones[0];
+  event.interactionData.attachedTemplateClones ??= new Map();
   event.interactionData.attachedTemplateClones.set(templateClone.id, templateClone);
 
   // Restore the token clones.
@@ -356,38 +356,34 @@ function _onDragLeftStart(wrapped, event) {
 }
 
 function _onDragLeftMove(wrapped, event) {
-  if ( this.attachedToken ) {
-    // Temporarily set the event clones to this template clone.
-    const tokenClones = event.interactionData.clones;
-    event.interactionData.attachedTemplateClones ??= new Map();
-    event.interactionData.clones = [event.interactionData.attachedTemplateClones.get(this.id)];
-    wrapped(event);
+  if ( !this.attachedToken ) return wrapped(event);
 
-    // Restore the token clones.
-    event.interactionData.clones = tokenClones;
-    return;
-  }
-
+  // See issue #136: https://github.com/caewok/fvtt-walled-templates/issues/136
+  event.interactionData.attachedTemplateClones ??= new Map();
+  const templateClone = event.interactionData.attachedTemplateClones.get(this.id);
+  const tokenClones = event.interactionData.clones;
+  event.interactionData.clones = templateClone ? [templateClone] : [];
   wrapped(event);
+
+  // Restore the token clones.
+  event.interactionData.clones = tokenClones;
 }
 
-function _onDragLeftCancel(wrapped, event) {
-  wrapped(event);
-  // canvas.templates.clearPreviewContainer(); // For whn
-}
-
-async function _onDragLeftDrop(wrapped, event) {
+async function _finalizeDragLeft(wrapped, event) {
   const attachedToken = this.attachedToken;
   if ( !attachedToken ) return wrapped(event);
-
-  // Temporarily set the event clones to this template clone.
-  const tokenClones = event.interactionData.clones;
-  const c = event.interactionData.attachedTemplateClones.get(this.id);
-  event.interactionData.clones = [c];
 
   // Enforce the distance between the template and token.
   const changes = this._calculateAttachedTemplateOffset(attachedToken.document, attachedToken);
   this.document.updateSource(changes);
+
+  // See issue #136: https://github.com/caewok/fvtt-walled-templates/issues/136
+  event.interactionData.attachedTemplateClones ??= new Map();
+  const templateClone = event.interactionData.attachedTemplateClones.get(this.id);
+
+  // Temporarily set the event clones to this template clone.
+  const tokenClones = event.interactionData.clones;
+  event.interactionData.clones = templateClone ? [templateClone] : [];
   await wrapped(event);
 
   // Restore the token clones.
@@ -426,10 +422,9 @@ PATCHES.BASIC.WRAPS = {
   _computeShape,
   _canDrag,
   clone,
-  _onDragLeftStart,
+  _initializeDragLeft,
   _onDragLeftMove,
-  _onDragLeftCancel,
-  _onDragLeftDrop,
+  _finalizeDragLeft,
   destroy,
   _canHover,
   _getGridHighlightPositions,

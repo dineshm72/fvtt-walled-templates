@@ -47,7 +47,7 @@ Hooks.once("init", async function() {
 
   // Wrap the measured template main template so it is displayed as a tab.
   // Order in PARTS matters: Ensure footer is last and the module tab is after the main.
-  const { footer, main, ...other } = MeasuredTemplateConfig.PARTS;
+  const { footer, main, ...other } = MeasuredTemplateConfig.PARTS; // eslint-disable-line no-unused-vars
   MeasuredTemplateConfig.PARTS = {
     tabs: {  template: "templates/generic/tab-navigation.hbs" },
     main: { template: TEMPLATES.CONFIG_MT_MAIN },
