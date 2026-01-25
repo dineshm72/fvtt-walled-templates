@@ -44,8 +44,8 @@ function controlToken(object, controlled) {
  * @param {Partial<DatabaseUpdateOperation>} options Additional options which modified the update request
  * @param {string} userId                           The ID of the User who triggered the update workflow
  */
-function updateToken(tokenD, changed, _options, userId) {
-  if ( userId !== game.user.id ) return;
+function updateToken(tokenD, changed, _options, _userId) {
+  if ( !game.user.isActiveGM ) return;
 
   if ( !(Object.hasOwn(changed, "x")
       || Object.hasOwn(changed, "y")

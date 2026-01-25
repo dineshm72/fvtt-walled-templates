@@ -755,7 +755,7 @@ function dnd5eTrimTargets(tokens) {
 
 /**
  * New method: MeasuredTemplate.prototype.releaseTargets
- * Release targets held by this template for this template document user.
+ * Release targets held by this template for this user.
  * @param {object} [opts]                       Options for narrowing target choices
  * @param {Set<Token>} [opts.tokens]            Release only tokens within this set
  * @param {boolean} [opts.broadcast=true]       Broadcast the user target change
@@ -765,7 +765,7 @@ function releaseTargets({ tokens, broadcast = true } = {}) {
   if ( !targetsToRelease.size ) return;
 
   // Release targets for this user.
-  const user = this.document.author;
+  const user = game.user;
   let targetFn = "setTarget";
   let userTargets = user.targets;
   let broadcastOpts = { targets: user.targets.ids };
@@ -815,7 +815,7 @@ function acquireTargets({ tokens, checkShapeBounds = true, onlyVisible = false, 
   if ( !targetsToAcquire.size ) return;
 
   // Acquire targets for this user.
-  const user = this.document.author;
+  const user = game.user;
   let targetFn = "setTarget";
   let userTargets = user.targets;
   let broadcastOpts = { targets: user.targets.ids };
